@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClauseLens Playground</title>
+<style>
+  :root { --bg: #0a0a0a; --surface: #161616; --border: #2a2a2a; --text: #e0e0e0; --muted: #888; --accent: #6c9; --accent2: #69c; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem; font-size: 14px; }
+  h1 { font-size: 1.1rem; color: var(--accent); margin-bottom: 1.5rem; font-weight: 500; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; max-width: 1100px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; }
+  .panel h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; font-weight: 500; }
+  label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .knob { margin-bottom: 1.25rem; }
+  .knob-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .knob-value { font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin-top: 0.3rem; background: transparent; }
+  textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem; padding: 0.75rem; resize: vertical; min-height: 80px; }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  button { width: 100%; padding: 0.6rem; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 0.75rem; }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .result { margin-top: 0; }
+  .answer-box { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1rem; margin-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; }
+  .meta { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.8rem; }
+  .meta span { padding: 0.2rem 0.5rem; border-radius: 3px; background: var(--bg); border: 1px solid var(--border); }
+  .meta .confidence-high { border-color: var(--accent); color: var(--accent); }
+  .meta .confidence-medium { border-color: #cc6; color: #cc6; }
+  .meta .confidence-low { border-color: #c66; color: #c66; }
+  .clause { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.75rem; margin-bottom: 0.5rem; font-size: 0.8rem; line-height: 1.5; }
+  .clause-header { display: flex; justify-content: space-between; margin-bottom: 0.4rem; }
+  .clause-id { color: var(--accent2); font-weight: 600; }
+  .clause-contract { color: var(--muted); }
+  .clause-score { color: var(--accent); }
+  .clause.cited { border-color: var(--accent2); }
+  .clause .cited-tag { font-size: 0.7rem; color: var(--accent2); margin-left: 0.5rem; }
+  .empty { color: var(--muted); font-style: italic; padding: 2rem; text-align: center; }
+</style>
+</head>
+<body>
+<h1>clauselens playground</h1>
+<div class="layout">
+  <div>
+    <div class="panel">
+      <h2>Retrieval knobs</h2>
+      <div class="knob">
+        <div class="knob-header">
+          <label for="topk">top_k</label>
+          <span class="knob-value" id="topk-val">4</span>
+        </div>
+        <input type="range" id="topk" min="1" max="10" value="4">
+      </div>
+      <div class="knob">
+        <div class="knob-header">
+          <label for="threshold">score_threshold</label>
+          <span class="knob-value" id="threshold-val">0.00</span>
+        </div>
+        <input type="range" id="threshold" min="0" max="100" value="0">
+      </div>
+    </div>
+    <div class="panel" style="margin-top: 1rem;">
+      <h2>Question</h2>
+      <textarea id="question" placeholder="e.g. What is the termination notice period?"></textarea>
+      <button id="ask" onclick="doAsk()">Ask</button>
+    </div>
+  </div>
+  <div>
+    <div class="panel result" id="result">
+      <div class="empty">Adjust the knobs and ask a question.</div>
+    </div>
+  </div>
+</div>
+<script>
+const topk = document.getElementById('topk');
+const threshold = document.getElementById('threshold');
+const topkVal = document.getElementById('topk-val');
+const thresholdVal = document.getElementById('threshold-val');
+
+topk.oninput = () => topkVal.textContent = topk.value;
+threshold.oninput = () => thresholdVal.textContent = (threshold.value / 100).toFixed(2);
+
+async function doAsk() {
+  const q = document.getElementById('question').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('ask');
+  btn.disabled = true;
+  btn.textContent = 'Thinking...';
+  const res = document.getElementById('result');
+  try {
+    const resp = await fetch('/ask', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        question: q,
+        k: parseInt(topk.value),
+        score_threshold: threshold.value / 100
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({detail: resp.statusText}));
+      res.innerHTML = `<div class="empty">Error: ${err.detail || resp.statusText}</div>`;
+      return;
+    }
+    const data = await resp.json();
+    const citedSet = new Set(data.citations);
+    const confClass = 'confidence-' + data.confidence;
+    let html = `
+      <h2>Answer</h2>
+      <div class="meta">
+        <span class="${confClass}">${data.confidence} confidence</span>
+        <span>${data.retrieved.length} clause${data.retrieved.length !== 1 ? 's' : ''} retrieved</span>
+        <span>${data.citations.length} cited</span>
+      </div>
+      <div class="answer-box">${escHtml(data.answer)}</div>
+      <h2 style="margin-bottom: 0.75rem;">Retrieved clauses</h2>
+    `;
+    for (const c of data.retrieved) {
+      const isCited = citedSet.has(c.id);
+      html += `
+        <div class="clause${isCited ? ' cited' : ''}">
+          <div class="clause-header">
+            <span><span class="clause-id">${escHtml(c.id)}</span>${isCited ? '<span class="cited-tag">CITED</span>' : ''} <span class="clause-contract">${escHtml(c.contract)}</span></span>
+            <span class="clause-score">${c.score.toFixed(3)}</span>
+          </div>
+          <div>${escHtml(c.text)}</div>
+        </div>`;
+    }
+    res.innerHTML = html;
+  } catch (e) {
+    res.innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Ask';
+  }
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+document.getElementById('question').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) doAsk();
+});
+</script>
+</body>
+</html>
