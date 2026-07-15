@@ -1,0 +1,52 @@
+[
+  {
+    "question": "What is the termination notice period for the SaaS agreement?",
+    "expected_clause_ids": ["MSA-01"],
+    "notes": "Easy retrieval. MSA-01 states 60 days for convenience termination."
+  },
+  {
+    "question": "How long do confidentiality obligations survive after the NDA terminates?",
+    "expected_clause_ids": ["NDA-02"],
+    "notes": "Easy. NDA-02 says 3 years after termination."
+  },
+  {
+    "question": "Can either party assign the NDA without consent?",
+    "expected_clause_ids": ["NDA-03"],
+    "notes": "Moderate. Should retrieve NDA-03 which prohibits assignment without consent."
+  },
+  {
+    "question": "Is assignment allowed without consent under the SaaS agreement?",
+    "expected_clause_ids": ["MSA-03"],
+    "notes": "Harder — similar topic to NDA-03 but different contract. MSA-03 has an M&A exception for Customer."
+  },
+  {
+    "question": "What are the assignment restrictions across all contracts?",
+    "expected_clause_ids": ["NDA-03", "MSA-03"],
+    "notes": "Multi-clause. Both NDA-03 and MSA-03 discuss assignment. Tests recall across contracts."
+  },
+  {
+    "question": "What is the liability cap in the SaaS agreement?",
+    "expected_clause_ids": ["MSA-04"],
+    "notes": "Easy. MSA-04 caps at 12 months of fees."
+  },
+  {
+    "question": "What insurance must the vendor carry?",
+    "expected_clause_ids": ["VND-01"],
+    "notes": "Easy retrieval. VND-01 lists CGL and E&O coverage."
+  },
+  {
+    "question": "What happens if the vendor breaches the agreement?",
+    "expected_clause_ids": ["VND-02", "VND-03"],
+    "notes": "Multi-clause. VND-02 covers indemnification for breach, VND-03 covers termination for material breach."
+  },
+  {
+    "question": "How quickly must the SaaS provider report a security incident?",
+    "expected_clause_ids": ["MSA-02"],
+    "notes": "Moderate. MSA-02 says 72 hours. Tests whether model finds the specific time requirement."
+  },
+  {
+    "question": "What types of damages are excluded under the SaaS agreement?",
+    "expected_clause_ids": ["MSA-04"],
+    "notes": "Moderate. MSA-04 excludes indirect, incidental, and consequential damages. Same clause as liability cap question — tests citation recall consistency."
+  }
+]

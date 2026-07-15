@@ -54,6 +54,18 @@ def healthz() -> dict:
     return {"status": "ok", "clause_count": _store.count()}
 
 
+@app.get("/corpus")
+def corpus_info() -> dict:
+    """Summary stats about the indexed corpus."""
+    rows = _store._conn.execute(
+        "SELECT contract, COUNT(*) FROM clauses GROUP BY contract ORDER BY contract"
+    ).fetchall()
+    return {
+        "total_clauses": _store.count(),
+        "contracts": {r[0]: r[1] for r in rows},
+    }
+
+
 @app.post("/ask", response_model=AskResponse)
 def ask_endpoint(req: AskRequest) -> AskResponse:
     if _store.count() == 0:

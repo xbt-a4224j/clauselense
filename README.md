@@ -2,6 +2,10 @@
 
 Contract clause Q&A with retrieval-augmented generation. Retrieves relevant clauses from a vector store, generates cited answers, and evaluates quality against labeled ground-truth.
 
+![ClauseLens playground — a cited answer with per-clause similarity scores and a faithfulness-graded confidence badge.](docs/screenshots/playground.png)
+
+*Ask a question → get a **cited** answer with a confidence grade, plus every retrieved clause and its similarity score. The **CITED** clause is what the answer is grounded in — citation accuracy and faithfulness are scored separately, because a wrong citation and a misstated-but-cited clause are different failures.*
+
 ## Architecture
 
 | Component | Implementation |
@@ -39,6 +43,39 @@ export OPENAI_API_KEY=sk-...
 python -m clauselens.seed      # index clauses
 uvicorn clauselens.app:app     # serve at http://localhost:8000
 ```
+
+## Adding clauses
+
+Clauses live in `data/sample_clauses.json` as an array of objects:
+
+```json
+[
+  {"id": "NDA-01", "contract": "Acme NDA", "text": "The Receiving Party shall not disclose..."},
+  {"id": "MSA-01", "contract": "SaaS MSA",  "text": "Either party may terminate with 30 days..."}
+]
+```
+
+After editing the file, re-index and verify:
+
+```bash
+python -m clauselens.seed      # re-embeds and upserts all clauses
+uvicorn clauselens.app:app     # corpus stats visible at http://localhost:8000
+```
+
+The playground UI shows the current corpus breakdown (clause count per contract) in the sidebar. If the corpus is empty, it tells you what to do.
+
+## Iteration loop
+
+The workflow for testing retrieval quality as you expand the corpus:
+
+1. Add or modify clauses in `data/sample_clauses.json`
+2. Add corresponding Q&A cases in `data/eval_set.json`
+3. Re-index: `python -m clauselens.seed`
+4. Run evals: `pytest tests/test_evals.py -v`
+5. Tune retrieval parameters (`top_k`, `score_threshold`) in the playground
+6. Repeat
+
+As the corpus grows, expect citation F1 to drop — that's the signal to improve retrieval (hybrid search, reranking, better thresholds).
 
 ## Eval harness
 

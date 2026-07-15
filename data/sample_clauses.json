@@ -1,0 +1,52 @@
+[
+  {
+    "id": "NDA-01",
+    "contract": "Mutual Non-Disclosure Agreement",
+    "text": "The Receiving Party agrees to hold all Confidential Information in strict confidence and not to disclose such information to any third party without the prior written consent of the Disclosing Party. Confidential Information includes, but is not limited to, trade secrets, business plans, customer lists, financial data, and proprietary technology."
+  },
+  {
+    "id": "NDA-02",
+    "contract": "Mutual Non-Disclosure Agreement",
+    "text": "This Agreement shall remain in effect for a period of two (2) years from the Effective Date. The obligations of confidentiality shall survive termination of this Agreement for an additional three (3) years following the date of termination."
+  },
+  {
+    "id": "NDA-03",
+    "contract": "Mutual Non-Disclosure Agreement",
+    "text": "Neither Party may assign or transfer this Agreement, or any rights or obligations hereunder, without the prior written consent of the other Party. Any attempted assignment without such consent shall be void and of no effect."
+  },
+  {
+    "id": "MSA-01",
+    "contract": "SaaS Master Service Agreement",
+    "text": "Either party may terminate this Agreement for convenience upon sixty (60) days' prior written notice to the other party. In the event of termination for convenience by Customer, any prepaid fees for the remainder of the then-current subscription term shall be non-refundable."
+  },
+  {
+    "id": "MSA-02",
+    "contract": "SaaS Master Service Agreement",
+    "text": "Provider shall maintain commercially reasonable administrative, physical, and technical safeguards to protect Customer Data. Provider shall promptly notify Customer of any Security Incident affecting Customer Data, and in no event later than seventy-two (72) hours after discovery."
+  },
+  {
+    "id": "MSA-03",
+    "contract": "SaaS Master Service Agreement",
+    "text": "Customer may not assign this Agreement or any rights hereunder without Provider's prior written consent, except in connection with a merger, acquisition, or sale of all or substantially all of Customer's assets. Provider may assign this Agreement without restriction."
+  },
+  {
+    "id": "MSA-04",
+    "contract": "SaaS Master Service Agreement",
+    "text": "IN NO EVENT SHALL EITHER PARTY'S AGGREGATE LIABILITY UNDER THIS AGREEMENT EXCEED THE TOTAL FEES PAID OR PAYABLE BY CUSTOMER DURING THE TWELVE (12) MONTH PERIOD IMMEDIATELY PRECEDING THE EVENT GIVING RISE TO THE CLAIM. NEITHER PARTY SHALL BE LIABLE FOR ANY INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES."
+  },
+  {
+    "id": "VND-01",
+    "contract": "Vendor Services Agreement",
+    "text": "Vendor shall maintain the following insurance coverage throughout the term of this Agreement: (a) commercial general liability insurance with limits of not less than $2,000,000 per occurrence; (b) professional liability (errors and omissions) insurance with limits of not less than $5,000,000 per claim."
+  },
+  {
+    "id": "VND-02",
+    "contract": "Vendor Services Agreement",
+    "text": "Vendor shall indemnify, defend, and hold harmless the Company and its officers, directors, and employees from and against any and all claims, damages, losses, and expenses arising out of or relating to Vendor's breach of this Agreement or Vendor's negligent acts or omissions."
+  },
+  {
+    "id": "VND-03",
+    "contract": "Vendor Services Agreement",
+    "text": "Either party may terminate this Agreement immediately upon written notice if the other party materially breaches any provision of this Agreement and fails to cure such breach within thirty (30) days after receipt of written notice specifying the breach in reasonable detail."
+  }
+]

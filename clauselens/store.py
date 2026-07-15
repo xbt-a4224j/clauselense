@@ -31,7 +31,10 @@ class Clause:
 class ClauseStore:
     def __init__(self, db_path: str | Path):
         self.db_path = str(db_path)
-        self._conn = sqlite3.connect(self.db_path)
+        # check_same_thread=False: FastAPI serves requests on a threadpool, so the
+        # connection is used across threads. Safe here — reads dominate and writes
+        # (seed/index) are serialized.
+        self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self._conn.execute(
             """
             CREATE TABLE IF NOT EXISTS clauses (
