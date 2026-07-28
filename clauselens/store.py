@@ -10,12 +10,13 @@ Schema:
     clauses(id TEXT PRIMARY KEY, contract TEXT, text TEXT, embedding BLOB)
     embedding is a float32 numpy array serialized with .tobytes()
 """
+
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 
@@ -49,8 +50,10 @@ class ClauseStore:
 
     def upsert(self, clauses: Iterable[tuple[str, str, str, np.ndarray]]) -> None:
         """clauses is an iterable of (id, contract, text, embedding)."""
-        rows = [(cid, contract, text, emb.astype(np.float32).tobytes())
-                for cid, contract, text, emb in clauses]
+        rows = [
+            (cid, contract, text, emb.astype(np.float32).tobytes())
+            for cid, contract, text, emb in clauses
+        ]
         self._conn.executemany(
             "INSERT OR REPLACE INTO clauses (id, contract, text, embedding) VALUES (?, ?, ?, ?)",
             rows,
@@ -76,13 +79,18 @@ class ClauseStore:
 
         embs = np.stack([np.frombuffer(r[3], dtype=np.float32) for r in rows])
         # Normalize corpus vectors once per query (cheap at this scale).
-        embs /= (np.linalg.norm(embs, axis=1, keepdims=True) + 1e-12)
+        embs /= np.linalg.norm(embs, axis=1, keepdims=True) + 1e-12
 
         scores = embs @ q  # cosine similarity since both sides are unit-norm
         top_idx = np.argsort(-scores)[:k]
 
         return [
-            Clause(id=rows[i][0], contract=rows[i][1], text=rows[i][2], score=float(scores[i]))
+            Clause(
+                id=rows[i][0],
+                contract=rows[i][1],
+                text=rows[i][2],
+                score=float(scores[i]),
+            )
             for i in top_idx
             if float(scores[i]) >= score_threshold
         ]

@@ -5,6 +5,7 @@ Usage:
     python -m clauselens.seed
     python -m clauselens.seed --db clauselens.db --data data/sample_clauses.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -59,8 +60,7 @@ def seed(db_path: str, data_path: str | Path) -> None:
     embeddings = _embed_batch(client, texts)
 
     rows = [
-        (c["id"], c["contract"], c["text"], emb)
-        for c, emb in zip(clauses, embeddings)
+        (c["id"], c["contract"], c["text"], emb) for c, emb in zip(clauses, embeddings)
     ]
     store.upsert(rows)
 
@@ -72,7 +72,9 @@ def seed(db_path: str, data_path: str | Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Seed the ClauseLens clause store.")
     parser.add_argument("--db", default=DEFAULT_DB, help="SQLite database path")
-    parser.add_argument("--data", default=str(DEFAULT_DATA), help="Path to clauses JSON")
+    parser.add_argument(
+        "--data", default=str(DEFAULT_DATA), help="Path to clauses JSON"
+    )
     args = parser.parse_args()
     seed(args.db, args.data)
 

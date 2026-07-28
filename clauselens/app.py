@@ -4,6 +4,7 @@ FastAPI wrapper around the RAG pipeline.
 Run:
     uvicorn clauselens.app:app --reload
 """
+
 from __future__ import annotations
 
 import os
@@ -69,9 +70,13 @@ def corpus_info() -> dict:
 @app.post("/ask", response_model=AskResponse)
 def ask_endpoint(req: AskRequest) -> AskResponse:
     if _store.count() == 0:
-        raise HTTPException(status_code=503, detail="no clauses indexed; run seed.py first")
+        raise HTTPException(
+            status_code=503, detail="no clauses indexed; run seed.py first"
+        )
 
-    resp: RagResponse = ask(_store, req.question, k=req.k, score_threshold=req.score_threshold)
+    resp: RagResponse = ask(
+        _store, req.question, k=req.k, score_threshold=req.score_threshold
+    )
     return AskResponse(
         answer=resp.answer,
         citations=resp.citations,

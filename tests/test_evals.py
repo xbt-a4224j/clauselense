@@ -4,6 +4,7 @@ End-to-end eval tests for ClauseLens.
 Requires OPENAI_API_KEY to run — skips cleanly without it.
 Runs the full RAG pipeline against the eval set and asserts quality thresholds.
 """
+
 from __future__ import annotations
 
 import os

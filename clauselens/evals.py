@@ -11,6 +11,7 @@ Eval harness. Two metrics:
 
 Threshold logic lives in `aggregate()`. CI gates on these numbers.
 """
+
 from __future__ import annotations
 
 import json
@@ -91,11 +92,13 @@ def judge_faithfulness(
         response_format={"type": "json_object"},
         temperature=0.0,
     )
-    raw = json.loads(completion.choices[0].message.content)
+    raw = json.loads(completion.choices[0].message.content or "{}")
     return bool(raw.get("faithful", False)), raw.get("reason", "")
 
 
-def run_eval(store: ClauseStore, case: EvalCase, client: OpenAI | None = None) -> EvalResult:
+def run_eval(
+    store: ClauseStore, case: EvalCase, client: OpenAI | None = None
+) -> EvalResult:
     client = client or OpenAI()
     resp: RagResponse = ask(store, case.question, client=client)
     expected = set(case.expected_clause_ids)
