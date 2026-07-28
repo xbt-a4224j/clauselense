@@ -48,6 +48,25 @@ Issue 4 (hybrid BM25), Issue 5 (cross-encoder reranker), Issue 6 (OTel tracing),
 
 ---
 
+## Tasks ↔ GitHub issues
+
+Each task is filed as an issue. Work them in order; each commit closes its issue.
+
+| Task | Issue | Title |
+|------|-------|-------|
+| 1 | [#8](https://github.com/xbt-a4224j/clauselense/issues/8) | Prompt says "numbered clauses"; context is ID-tagged |
+| 2 | [#9](https://github.com/xbt-a4224j/clauselense/issues/9) | Normalize embeddings at write time and cache the corpus matrix |
+| 3 | [#10](https://github.com/xbt-a4224j/clauselense/issues/10) | Content-addressed embedding cache + offline seeding |
+| 4 | [#11](https://github.com/xbt-a4224j/clauselense/issues/11) | Retrieval-only metrics (recall@k, MRR, P@k) |
+| 5 | [#12](https://github.com/xbt-a4224j/clauselense/issues/12) | Eval runner CLI, dev/holdout split, both F1 flavors — **keystone** |
+| 6 | [#13](https://github.com/xbt-a4224j/clauselense/issues/13) | Gate retrieval quality in CI without a repo secret |
+| 7 | [#14](https://github.com/xbt-a4224j/clauselense/issues/14) | Commit real eval numbers; correct the confidence claim |
+| 8 | [#15](https://github.com/xbt-a4224j/clauselense/issues/15) | One-command demo, Makefile, untrack .idea |
+
+Pre-existing roadmap issues #1–#7 are untouched by this plan; #12 unblocks #1, #2 and #3.
+
+---
+
 ## File structure
 
 | File | Status | Responsibility |
@@ -72,7 +91,7 @@ Issue 4 (hybrid BM25), Issue 5 (cross-encoder reranker), Issue 6 (OTel tracing),
 
 ---
 
-## Task 1: Fix the prompt/context contract
+## Task 1: Fix the prompt/context contract — [#8](https://github.com/xbt-a4224j/clauselense/issues/8)
 
 Addresses F1.
 
@@ -220,12 +239,14 @@ The system prompt told the model to expect numbered clauses while rag.py
 supplies bracketed clause IDs. Citation F1 is scored on exact string match
 against expected_clause_ids, so a model emitting '1' instead of 'MSA-01'
 looked like a retrieval failure. Adds stub-client contract tests that need
-no API key."
+no API key.
+
+Closes #8."
 ```
 
 ---
 
-## Task 2: Normalize at write time and cache the matrix
+## Task 2: Normalize at write time and cache the matrix — [#9](https://github.com/xbt-a4224j/clauselense/issues/9)
 
 Addresses F6, F10.
 
@@ -429,12 +450,14 @@ git commit -m "perf(store): normalize at write time, cache the corpus matrix
 search() previously re-read every BLOB and re-normalized the whole corpus on
 every query. Vectors are now unit-norm at rest and the stacked matrix is
 cached, so a query is one normalize plus one matmul. Adds contract_counts()
-so app.py stops reaching into _store._conn."
+so app.py stops reaching into _store._conn.
+
+Closes #9."
 ```
 
 ---
 
-## Task 3: Content-addressed embedding cache
+## Task 3: Content-addressed embedding cache — [#10](https://github.com/xbt-a4224j/clauselense/issues/10)
 
 Addresses F9 and unblocks offline evals in Task 5.
 
@@ -753,12 +776,14 @@ git commit -m "feat(embed): content-addressed embedding cache + offline seeding
 
 Commits the 20 vectors (10 clauses, 10 eval questions) the toy corpus needs so
 a fresh clone can seed and retrieve with no OPENAI_API_KEY. Unblocks
-retrieval-only evals in CI without a repo secret."
+retrieval-only evals in CI without a repo secret.
+
+Closes #10."
 ```
 
 ---
 
-## Task 4: Retrieval-only metrics
+## Task 4: Retrieval-only metrics — [#11](https://github.com/xbt-a4224j/clauselense/issues/11)
 
 Addresses F5.
 
@@ -886,12 +911,14 @@ git add clauselens/metrics.py tests/test_metrics.py
 git commit -m "feat(evals): retrieval-only metrics (recall@k, MRR, P@k)
 
 Grades what search returned, independent of what the model cited. Pure math,
-no API calls — these can gate every commit."
+no API calls — these can gate every commit.
+
+Closes #11."
 ```
 
 ---
 
-## Task 5: Split the eval set, add both F1 flavors, ship the runner CLI
+## Task 5: Split the eval set, add both F1 flavors, ship the runner CLI — [#12](https://github.com/xbt-a4224j/clauselense/issues/12)
 
 Addresses F3, F7, F8.
 
@@ -1308,12 +1335,14 @@ git commit -m "feat(evals): runner CLI, dev/holdout split, retrieval-only mode
 Adds the 'python -m clauselens.evals' entry point that Issues 1, 2 and 3 all
 assume exists. Splits the 10 cases 6 dev / 4 holdout so hyperparameter tuning
 stops fitting the whole set. Reports both F1-of-means and mean-of-F1s, because
-the gap between them is where the variance hides."
+the gap between them is where the variance hides.
+
+Closes #12."
 ```
 
 ---
 
-## Task 6: Gate retrieval in CI without a secret
+## Task 6: Gate retrieval in CI without a secret — [#13](https://github.com/xbt-a4224j/clauselense/issues/13)
 
 Addresses F5.
 
@@ -1365,12 +1394,14 @@ git commit -m "ci: gate retrieval quality on every push, no secret required
 
 The existing test job skips entirely when OPENAI_API_KEY is absent, which means
 forks and PRs from outside get no signal at all. The offline job runs the whole
-retrieval path from the committed cache."
+retrieval path from the committed cache.
+
+Closes #13."
 ```
 
 ---
 
-## Task 7: Commit real numbers and correct the README
+## Task 7: Commit real numbers and correct the README — [#14](https://github.com/xbt-a4224j/clauselense/issues/14)
 
 Addresses F2, F4, F12, and the honesty items from F5/F6.
 
@@ -1523,12 +1554,14 @@ The README described a 'faithfulness-graded confidence badge' — faithfulness
 never runs on the request path; the badge is the model's self-report. Adds
 committed eval and retrieval reports so the repo shows its own numbers, with
 the k=4-over-10-clauses caveat stated plainly. Refreshes Issue 1, whose text
-predated the tunable-params work."
+predated the tunable-params work.
+
+Closes #14."
 ```
 
 ---
 
-## Task 8: Demo entry point and repo hygiene
+## Task 8: Demo entry point and repo hygiene — [#15](https://github.com/xbt-a4224j/clauselense/issues/15)
 
 Addresses F9, F11.
 
@@ -1617,7 +1650,9 @@ git add Makefile .gitignore README.md
 git commit -m "chore: make demo/eval/test one command each, untrack .idea
 
 A fresh clone can now index and serve with no API key. Removes JetBrains
-project files from the index."
+project files from the index.
+
+Closes #15."
 ```
 
 ---
