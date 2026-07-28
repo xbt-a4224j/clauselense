@@ -47,41 +47,60 @@ class ClauseStore:
             """
         )
         self._conn.commit()
+        self._invalidate()
+
+    def _invalidate(self) -> None:
+        self._rows: list[tuple[str, str, str]] | None = None
+        self._embs: np.ndarray | None = None
+
+    def _load(self) -> tuple[list[tuple[str, str, str]], np.ndarray]:
+        """Load and cache the corpus matrix. Vectors are already unit-norm on disk."""
+        if self._rows is None or self._embs is None:
+            raw = self._conn.execute(
+                "SELECT id, contract, text, embedding FROM clauses"
+            ).fetchall()
+            self._rows = [(r[0], r[1], r[2]) for r in raw]
+            self._embs = (
+                np.stack([np.frombuffer(r[3], dtype=np.float32) for r in raw])
+                if raw
+                else np.zeros((0, 0), dtype=np.float32)
+            )
+        return self._rows, self._embs
 
     def upsert(self, clauses: Iterable[tuple[str, str, str, np.ndarray]]) -> None:
-        """clauses is an iterable of (id, contract, text, embedding)."""
-        rows = [
-            (cid, contract, text, emb.astype(np.float32).tobytes())
-            for cid, contract, text, emb in clauses
-        ]
+        """clauses is an iterable of (id, contract, text, embedding).
+
+        Embeddings are unit-normalized here so search is a plain matmul.
+        """
+        rows = []
+        for cid, contract, text, emb in clauses:
+            vec = np.asarray(emb, dtype=np.float32)
+            vec = vec / (np.linalg.norm(vec) + 1e-12)
+            rows.append((cid, contract, text, vec.tobytes()))
         self._conn.executemany(
             "INSERT OR REPLACE INTO clauses (id, contract, text, embedding) VALUES (?, ?, ?, ?)",
             rows,
         )
         self._conn.commit()
+        self._invalidate()
 
     def search(
         self, query_embedding: np.ndarray, k: int = 4, score_threshold: float = 0.0
     ) -> list[Clause]:
         """Return top-k clauses by cosine similarity.
 
-        Loads all embeddings into memory. Fine for ~thousands of rows;
-        swap for pgvector once you cross ~100k.
+        Corpus vectors are unit-norm at rest and the stacked matrix is cached, so a
+        query costs one normalize + one matmul. Still O(n) in corpus size per query —
+        swap for pgvector well before you reach six figures of clauses.
         """
-        rows = self._conn.execute(
-            "SELECT id, contract, text, embedding FROM clauses"
-        ).fetchall()
+        rows, embs = self._load()
         if not rows:
             return []
 
-        q = query_embedding.astype(np.float32)
-        q /= np.linalg.norm(q) + 1e-12
+        q = np.asarray(query_embedding, dtype=np.float32)
+        q = q / (np.linalg.norm(q) + 1e-12)
 
-        embs = np.stack([np.frombuffer(r[3], dtype=np.float32) for r in rows])
-        # Normalize corpus vectors once per query (cheap at this scale).
-        embs /= np.linalg.norm(embs, axis=1, keepdims=True) + 1e-12
-
-        scores = embs @ q  # cosine similarity since both sides are unit-norm
+        scores = embs @ q
         top_idx = np.argsort(-scores)[:k]
 
         return [
@@ -94,6 +113,13 @@ class ClauseStore:
             for i in top_idx
             if float(scores[i]) >= score_threshold
         ]
+
+    def contract_counts(self) -> dict[str, int]:
+        """Clause count per contract, ascending by contract name."""
+        rows = self._conn.execute(
+            "SELECT contract, COUNT(*) FROM clauses GROUP BY contract ORDER BY contract"
+        ).fetchall()
+        return {r[0]: r[1] for r in rows}
 
     def count(self) -> int:
         return self._conn.execute("SELECT COUNT(*) FROM clauses").fetchone()[0]
