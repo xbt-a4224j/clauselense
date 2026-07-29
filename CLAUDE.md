@@ -10,26 +10,23 @@ Personal project to play with RAG, evals, and observability on contract-like tex
 
 Don't over-engineer. Keep the surface small and readable. Leave complexity for the issue tracker.
 
-## Current state (as of Apr 14, 2026)
+## Current state (as of Jul 29, 2026)
 
-### Implemented
+Fully implemented and green in CI (lint, typecheck, offline retrieval gate, full eval):
 
-- `README.md` — project overview. Don't rewrite the voice.
-- `requirements.txt`, `.env.example`, `.gitignore`
-- `clauselens/__init__.py`
-- `clauselens/store.py` — SQLite-backed vector store, cosine similarity in numpy
-- `clauselens/rag.py` — embed → retrieve → generate with cited JSON output
-- `clauselens/app.py` — FastAPI with `POST /ask` and `GET /healthz`
-- `clauselens/evals.py` — citation precision/recall + LLM-as-judge faithfulness
+- The pipeline: `store.py` (SQLite + numpy, unit-norm at rest, cached matrix),
+  `rag.py` (embed → retrieve → generate, cited JSON), `app.py` (FastAPI + playground)
+- `embed_cache.py` — content-addressed cache; `data/embeddings.npz` is committed, so
+  `python -m clauselens.seed --offline` and all retrieval evals run with no API key
+- `evals.py` — citation P/R (+ both F1 flavors), LLM-judge faithfulness,
+  retrieval-only metrics (`metrics.py`), dev/holdout split, and a runner CLI
+  (`python -m clauselens.evals --help`)
+- `results/` — committed baseline numbers with git-SHA headers; read
+  `results/README.md` for the k=4-over-10-clauses caveat and the judge-flip finding
+- `Makefile` — `make demo` / `make test` / `make eval-offline` all work keyless
 
-### Not yet implemented (see "Immediate next steps")
-
-- `clauselens/seed.py` — CLI to embed clauses from `data/sample_clauses.json` into the DB
-- `data/sample_clauses.json` — 10 hand-picked contract clauses
-- `data/eval_set.json` — 10 labeled Q&A pairs
-- `tests/test_evals.py` — pytest wrapper that runs the full eval and asserts thresholds
-- `.github/workflows/ci.yml` — runs pytest on every push
-- Any actual end-to-end test run (no one has run `pytest` or `uvicorn` yet)
+The improvement plan that produced this state is `improvements_jul28.md` (tasks map to
+closed issues #8–#15). Open roadmap: issues #1–#7 (originals) and #16 (judge voting).
 
 ## Architectural decisions (and why)
 
