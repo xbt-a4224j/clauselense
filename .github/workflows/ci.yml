@@ -28,6 +28,21 @@ jobs:
       - run: pip install -r requirements.txt mypy
       - run: mypy clauselens/ --ignore-missing-imports
 
+  retrieval-offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Seed from the committed embedding cache
+        run: python -m clauselens.seed --offline
+      - name: Retrieval + unit tests (no API key)
+        run: pytest tests/test_metrics.py tests/test_store.py tests/test_embed_cache.py tests/test_prompt_contract.py tests/test_retrieval_offline.py -v
+      - name: Retrieval report
+        run: python -m clauselens.evals --retrieval-only --split all
+
   test:
     runs-on: ubuntu-latest
     steps:
