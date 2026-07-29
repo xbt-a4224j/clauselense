@@ -2,6 +2,10 @@
 
 Contract clause Q&A with retrieval-augmented generation. Retrieves relevant clauses from a vector store, generates cited answers, and evaluates quality against labeled ground-truth.
 
+```bash
+make demo   # index from the committed cache, serve the playground — no API key required to boot
+```
+
 ![ClauseLens playground — a cited answer with per-clause similarity scores and the model's self-reported confidence.](docs/screenshots/playground.png)
 
 *Ask a question → get a **cited** answer with the model's own confidence, plus every retrieved clause and its similarity score. The **CITED** clause is what the answer is grounded in. Citation accuracy and faithfulness are scored separately — a wrong citation and a misstated-but-cited clause are different failures — but that scoring happens in the eval harness, not on the request path. The badge here is the model self-reporting.*
