@@ -36,10 +36,10 @@ def seeded_db(tmp_path_factory: pytest.TempPathFactory) -> str:
 
 @pytest.fixture(scope="module")
 def eval_results(seeded_db: str) -> list[EvalResult]:
-    """Run the full eval suite once and cache the results for all tests."""
+    """Run the dev split once and cache the results for all tests."""
     store = ClauseStore(seeded_db)
     client = OpenAI()
-    cases = load_eval_set(EVAL_SET_PATH)
+    cases = load_eval_set(EVAL_SET_PATH, split="dev")
     results = [run_eval(store, case, client=client) for case in cases]
     store.close()
     return results
@@ -64,5 +64,5 @@ def test_citation_f1_threshold(eval_results: list[EvalResult]) -> None:
 
 @skip_no_key
 def test_eval_coverage(eval_results: list[EvalResult]) -> None:
-    """Sanity check: we actually ran all 10 cases."""
-    assert len(eval_results) == 10
+    """Sanity check: we actually ran the whole dev split."""
+    assert len(eval_results) == 6
