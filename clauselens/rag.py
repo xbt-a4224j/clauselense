@@ -18,6 +18,7 @@ from typing import Any
 import numpy as np
 from openai import OpenAI
 
+from .embed_cache import EmbedCache
 from .store import Clause, ClauseStore
 
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "text-embedding-3-small")
@@ -53,9 +54,17 @@ class RagResponse:
     raw: dict[str, Any] = field(default_factory=dict)
 
 
-def embed(client: OpenAI, text: str) -> np.ndarray:
+def embed(client: OpenAI, text: str, cache: EmbedCache | None = None) -> np.ndarray:
+    """Embed a single string, consulting `cache` first when one is supplied."""
+    if cache is not None:
+        hit = cache.get(text)
+        if hit is not None:
+            return hit
     resp = client.embeddings.create(model=EMBED_MODEL, input=text)
-    return np.array(resp.data[0].embedding, dtype=np.float32)
+    vec = np.array(resp.data[0].embedding, dtype=np.float32)
+    if cache is not None:
+        cache.put(text, vec)
+    return vec
 
 
 def ask(
@@ -64,11 +73,12 @@ def ask(
     k: int = 4,
     score_threshold: float = 0.0,
     client: OpenAI | None = None,
+    cache: EmbedCache | None = None,
 ) -> RagResponse:
     client = client or OpenAI()
 
     # 1. retrieve
-    q_emb = embed(client, question)
+    q_emb = embed(client, question, cache=cache)
     retrieved = store.search(q_emb, k=k, score_threshold=score_threshold)
 
     # 2. build cited context
