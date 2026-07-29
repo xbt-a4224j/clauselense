@@ -2,9 +2,9 @@
 
 Contract clause Q&A with retrieval-augmented generation. Retrieves relevant clauses from a vector store, generates cited answers, and evaluates quality against labeled ground-truth.
 
-![ClauseLens playground — a cited answer with per-clause similarity scores and a faithfulness-graded confidence badge.](docs/screenshots/playground.png)
+![ClauseLens playground — a cited answer with per-clause similarity scores and the model's self-reported confidence.](docs/screenshots/playground.png)
 
-*Ask a question → get a **cited** answer with a confidence grade, plus every retrieved clause and its similarity score. The **CITED** clause is what the answer is grounded in — citation accuracy and faithfulness are scored separately, because a wrong citation and a misstated-but-cited clause are different failures.*
+*Ask a question → get a **cited** answer with the model's own confidence, plus every retrieved clause and its similarity score. The **CITED** clause is what the answer is grounded in. Citation accuracy and faithfulness are scored separately — a wrong citation and a misstated-but-cited clause are different failures — but that scoring happens in the eval harness, not on the request path. The badge here is the model self-reporting.*
 
 ## Architecture
 
@@ -16,6 +16,28 @@ Contract clause Q&A with retrieval-augmented generation. Retrieves relevant clau
 | API | FastAPI (`POST /ask`, `GET /healthz`) |
 | Eval metrics | Citation precision/recall, LLM-as-judge faithfulness |
 | Playground | Browser UI at `/` with retrieval parameter controls |
+
+## What it actually scores
+
+Latest committed run ([results/latest.md](results/latest.md) and
+[results/retrieval.md](results/retrieval.md), all 10 cases, k=4):
+
+| Metric | Value | Gate |
+|--------|-------|------|
+| Faithfulness (LLM-judged) | 0.90 | ≥ 0.80 |
+| Citation precision / recall | 1.00 / 1.00 | F1 ≥ 0.70 |
+| Recall@4 (retrieval only, offline) | 1.00 | ≥ 0.90 |
+| Precision@4 (retrieval only) | 0.30 | — |
+| MRR | 1.00 | — |
+
+**The caveat that matters more than the numbers:** the corpus is 10 clauses and
+`top_k` is 4, so every query retrieves 40% of everything and recall is nearly free.
+What these numbers measure is whether the model cites the right clause from a set it
+was essentially handed — not whether retrieval works. The one interesting number is
+the failure: the committed run judges case 4 (the adversarial NDA-vs-MSA assignment
+pair) unfaithful *with perfect citations*, and a rerun of the same case flips it —
+see [results/README.md](results/README.md) for why I think the flip is the more
+useful finding.
 
 ## Project structure
 
@@ -36,12 +58,21 @@ tests/
 
 ## Quickstart
 
+No API key needed to see retrieval work — embeddings for the toy corpus are committed:
+
 ```bash
 pip install -r requirements.txt
-export OPENAI_API_KEY=sk-...
+python -m clauselens.seed --offline                       # index from the committed cache
+python -m clauselens.evals --retrieval-only --split all   # retrieval report, zero API calls
+```
 
-python -m clauselens.seed      # index clauses
-uvicorn clauselens.app:app     # serve at http://localhost:8000
+For generation (answers, citations, faithfulness) you need a key:
+
+```bash
+export OPENAI_API_KEY=sk-...
+python -m clauselens.seed --write-cache   # re-embed from the API (and refresh the cache)
+uvicorn clauselens.app:app                # playground at http://localhost:8000
+python -m clauselens.evals --split dev    # full eval on the dev split
 ```
 
 ## Adding clauses
@@ -101,9 +132,15 @@ Retrieval parameters (`top_k`, `score_threshold`) are configurable per request v
 
 ## Known limitations
 
-- Vector-only retrieval; no BM25 or reranking stage
-- In-memory similarity search; practical up to ~10k clauses
-- Eval set is small — metrics on a toy corpus with top_k=4 will overfit
+- Vector-only retrieval; no BM25 or reranking stage (#4, #5)
+- Search is O(corpus) per query — one matmul over a cached, unit-norm matrix. Fine into
+  the low thousands of clauses; swap for pgvector well before six figures
+- 10-clause corpus at k=4 means retrieval is barely under test (see "What it actually
+  scores" above)
+- The eval set is 10 cases, all single-hop factual extraction — no multi-hop,
+  comparative, or unanswerable cases yet (#7)
+- The LLM judge is a single binary vote and measurably flips on borderline cases
+  (see results/README.md); no abstain path — the system always tries to answer
 
 ## Roadmap
 

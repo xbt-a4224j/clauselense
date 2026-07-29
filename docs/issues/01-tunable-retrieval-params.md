@@ -4,9 +4,13 @@
 
 ## Context
 
-Today, retrieval uses a hardcoded `k=4` and no score threshold. Every question retrieves 4 clauses whether or not any of them are actually relevant. This artificially inflates recall on a small corpus and tanks precision.
+(Updated Jul 2026 — the original text predated the tunable-params work.)
 
-To measure and improve precision/recall meaningfully, the core retrieval behavior needs to be configurable — not hardcoded in `rag.py`.
+`top_k` and `score_threshold` are now threaded through `ask()`, the `/ask` request
+model, the playground controls, and the eval runner CLI (`--top-k`,
+`--score-threshold`). What's still missing is a single typed config object rather
+than parameters repeated at four call sites, plus a context-length guardrail and a
+recorded before/after comparison.
 
 ## Proposed knobs
 
